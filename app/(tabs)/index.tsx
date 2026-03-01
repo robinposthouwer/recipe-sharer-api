@@ -61,8 +61,16 @@ export default function ReceptenListScreen() {
         onPress={() => router.push('/add-url')}
         android_ripple={{ color: '#fff' }}
       >
-        <FontAwesome name="plus" size={20} color="#fff" />
+        <FontAwesome name="link" size={20} color="#fff" />
         <Text style={styles.addButtonText}>Via URL toevoegen</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.addButton, styles.addButtonSecondary]}
+        onPress={() => router.push('/add-manual')}
+        android_ripple={{ color: '#fff' }}
+      >
+        <FontAwesome name="edit" size={20} color="#fff" />
+        <Text style={styles.addButtonText}>Handmatig toevoegen?</Text>
       </Pressable>
       <FlatList
         data={recipes}
@@ -73,7 +81,7 @@ export default function ReceptenListScreen() {
         contentContainerStyle={recipes.length === 0 ? styles.empty : undefined}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
-            Nog geen recepten. Deel een link van Instagram, TikTok of een andere app naar Recepten app om te starten.
+            Nog geen recepten...  Deel een link van Instagram, TikTok of een andere app naar Recepten app om te starten.
           </Text>
         }
       />
@@ -96,6 +104,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  addButtonSecondary: { backgroundColor: '#1a7f37' },
   item: {
     flexDirection: 'row',
     alignItems: 'center',

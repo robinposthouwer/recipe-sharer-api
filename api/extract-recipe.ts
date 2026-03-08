@@ -80,6 +80,53 @@ function extractOgMeta(html: string): { title: string | null; image: string | nu
   return { title, image };
 }
 
+type OEmbedProvider = 'instagram' | 'tiktok' | 'youtube';
+
+function getSocialMediaProvider(url: string): OEmbedProvider | null {
+  const u = url.toLowerCase();
+  if (u.includes('instagram.com')) return 'instagram';
+  if (u.includes('tiktok.com')) return 'tiktok';
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+  return null;
+}
+
+const OEMBED_ENDPOINTS: Record<OEmbedProvider, string> = {
+  instagram: 'https://api.instagram.com/oembed/?url=',
+  tiktok: 'https://www.tiktok.com/oembed?url=',
+  youtube: 'https://www.youtube.com/oembed?url=',
+};
+
+async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
+  title: string | null;
+  imageUrl: string | null;
+  ingredients: null;
+  instructions: null;
+}> {
+  const endpoint = OEMBED_ENDPOINTS[provider] + encodeURIComponent(url) +
+    (provider === 'youtube' ? '&format=json' : '');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const response = await fetch(endpoint, { signal: controller.signal });
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 401) {
+        throw new Error('private');
+      }
+      throw new Error(`oEmbed responded with ${response.status}`);
+    }
+    const data = await response.json();
+    console.log(`[oEmbed ${provider}] Raw response:`, JSON.stringify(data, null, 2));
+    return {
+      title: data.title ?? null,
+      imageUrl: data.thumbnail_url ?? null,
+      ingredients: null,
+      instructions: null,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export default async function handler(
   req: { method?: string; body?: { url?: string } },
   res: {
@@ -102,9 +149,31 @@ export default async function handler(
     res.status(400).json({ error: 'Ongeldige URL' });
     return;
   }
+
+  // Social media URLs: use oEmbed instead of HTML scraping
+  const provider = getSocialMediaProvider(url);
+  if (provider) {
+    try {
+      const result = await fetchOEmbed(url, provider);
+      res.status(200).json(result);
+      return;
+    } catch (err) {
+      if (err instanceof Error && err.message === 'private') {
+        res.status(403).json({
+          error: 'Dit lijkt een privépost te zijn. Alleen publieke posts kunnen worden opgehaald.',
+        });
+        return;
+      }
+      console.error(`[oEmbed ${provider}] Failed:`, err);
+      res.status(502).json({ error: 'Kon post niet ophalen via oEmbed' });
+      return;
+    }
+  }
+
+  // Regular websites: scrape HTML for JSON-LD / OG meta
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
     let response: Response;
     try {
       response = await fetch(url, {

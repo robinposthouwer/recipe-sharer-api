@@ -8,7 +8,9 @@
 - [ ] Themed.tsx en StyledText.tsx refactoren naar NativeWind
 
 ## API uitbreiden
-- [ ] Social media beschrijvingen ophalen (Instagram, TikTok)
+- [ ] oEmbed integratie voor Instagram, TikTok en YouTube (caption + thumbnail ophalen)
+- [ ] AI-parsing van social media captions naar ingrediënten en bereidingswijze
+- [ ] Lokaal opslaan van afbeeldingen (social media thumbnails verlopen)
 - [ ] AI-endpoint voor receptextractie uit tekst (`api/extract-from-text.ts`)
 - [ ] Afbeeldingen genereren voor recepten zonder foto (`api/generate-image.ts`)
 
@@ -16,6 +18,13 @@
 - [ ] Login / registratie systeem
 - [ ] Cloud-sync van recepten (bijv. Supabase of Firebase)
 - [ ] Recepten delen met andere gebruikers
+
+## Sociaal delen (toekomstig)
+- [ ] Recepten delen met vrienden die de app hebben
+- [ ] Vrienden toevoegen aan de app
+- [ ] Groepen en familielijsten aanmaken
+- [ ] Juridisch uitzoeken: auteursrecht op receptteksten bij delen
+- [ ] Juridisch uitzoeken: AVG/GDPR bij opslaan van contactgegevens en gebruikersdata in de cloud
 
 ## Claude-integratie verbeteren
 - [ ] Alle Claude-bestanden binnen het project verplaatsen naar `.claude/` map (commands, hooks, settings)

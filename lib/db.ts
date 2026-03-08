@@ -92,6 +92,31 @@ export async function getRecipe(id: number): Promise<Recipe | null> {
   return rows[0] ?? null;
 }
 
+export async function updateRecipe(id: number, data: {
+  title?: string | null;
+  url?: string | null;
+  notes?: string | null;
+  imagePath?: string | null;
+  ingredients?: string | null;
+  instructions?: string | null;
+}): Promise<void> {
+  const database = await initDb();
+  const source = inferSource(data.url ?? null);
+  await database.runAsync(
+    `UPDATE recipes SET title = ?, url = ?, source = ?, notes = ?, imagePath = ?, ingredients = ?, instructions = ? WHERE id = ?`,
+    [
+      data.title ?? null,
+      data.url ?? null,
+      source,
+      data.notes ?? null,
+      data.imagePath ?? null,
+      data.ingredients ?? null,
+      data.instructions ?? null,
+      id,
+    ]
+  );
+}
+
 export async function deleteRecipe(id: number): Promise<void> {
   const database = await initDb();
   await database.runAsync(`DELETE FROM recipes WHERE id = ?`, [id]);

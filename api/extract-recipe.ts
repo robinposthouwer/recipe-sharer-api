@@ -80,24 +80,21 @@ function extractOgMeta(html: string): { title: string | null; image: string | nu
   return { title, image };
 }
 
-type OEmbedProvider = 'instagram' | 'tiktok' | 'youtube';
+type OEmbedProvider = 'tiktok' | 'youtube';
 
-function getSocialMediaProvider(url: string): OEmbedProvider | null {
+function getOEmbedProvider(url: string): OEmbedProvider | null {
   const u = url.toLowerCase();
-  if (u.includes('instagram.com')) return 'instagram';
   if (u.includes('tiktok.com')) return 'tiktok';
   if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
   return null;
 }
 
+function isInstagramUrl(url: string): boolean {
+  return url.toLowerCase().includes('instagram.com');
+}
+
 function buildOEmbedUrl(url: string, provider: OEmbedProvider): string {
   const encoded = encodeURIComponent(url);
-  if (provider === 'instagram') {
-    const appId = process.env.META_APP_ID ?? '';
-    const clientToken = process.env.META_CLIENT_TOKEN ?? '';
-    const accessToken = `${appId}|${clientToken}`;
-    return `https://graph.facebook.com/v25.0/instagram_oembed?url=${encoded}&access_token=${accessToken}`;
-  }
   if (provider === 'tiktok') {
     return `https://www.tiktok.com/oembed?url=${encoded}`;
   }
@@ -110,9 +107,6 @@ async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
   ingredients: null;
   instructions: null;
 }> {
-  if (provider === 'instagram' && (!process.env.META_APP_ID || !process.env.META_CLIENT_TOKEN)) {
-    throw new Error('Meta App ID of Client Token is niet geconfigureerd.');
-  }
   const endpoint = buildOEmbedUrl(url, provider);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
@@ -129,6 +123,45 @@ async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
     return {
       title: data.title ?? null,
       imageUrl: data.thumbnail_url ?? null,
+      ingredients: null,
+      instructions: null,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Instagram: scrape OG meta tags (tijdelijk, tot Meta App Review is goedgekeurd)
+async function fetchInstagramMeta(url: string): Promise<{
+  title: string | null;
+  imageUrl: string | null;
+  ingredients: null;
+  instructions: null;
+}> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Instagram responded with ${response.status}`);
+    }
+    const html = await response.text();
+    const og = extractOgMeta(html);
+    // Also try to extract description (caption) from og:description
+    const ogDesc = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i)
+      ?? html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+    const description = ogDesc ? ogDesc[1].trim() : null;
+    console.log('[Instagram scrape] OG data:', JSON.stringify({ title: og.title, image: og.image, description }, null, 2));
+    return {
+      title: description || og.title,
+      imageUrl: og.image,
       ingredients: null,
       instructions: null,
     };
@@ -160,8 +193,21 @@ export default async function handler(
     return;
   }
 
-  // Social media URLs: use oEmbed instead of HTML scraping
-  const provider = getSocialMediaProvider(url);
+  // Instagram: scrape OG meta tags (tijdelijk tot oEmbed API beschikbaar is)
+  if (isInstagramUrl(url)) {
+    try {
+      const result = await fetchInstagramMeta(url);
+      res.status(200).json(result);
+      return;
+    } catch (err) {
+      console.error('[Instagram scrape] Failed:', err);
+      res.status(502).json({ error: 'Kon Instagram-post niet ophalen' });
+      return;
+    }
+  }
+
+  // TikTok & YouTube: use oEmbed
+  const provider = getOEmbedProvider(url);
   if (provider) {
     try {
       const result = await fetchOEmbed(url, provider);
@@ -175,7 +221,7 @@ export default async function handler(
         return;
       }
       console.error(`[oEmbed ${provider}] Failed:`, err);
-      res.status(502).json({ error: 'Kon post niet ophalen via oEmbed' });
+      res.status(502).json({ error: 'Kon post niet ophalen' });
       return;
     }
   }

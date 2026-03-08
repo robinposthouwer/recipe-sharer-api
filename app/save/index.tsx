@@ -18,7 +18,7 @@ import { Text, View } from '@/components/Themed';
 import { insertRecipe } from '@/lib/db';
 import { extractImagePath, extractTitle, extractUrl } from '@/lib/shareIntent';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
 
 export default function SaveScreen() {
   const router = useRouter();
@@ -46,11 +46,19 @@ export default function SaveScreen() {
 
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/extract-recipe`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url }),
-        });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        let res: Response;
+        try {
+          res = await fetch(`${API_URL}/api/extract-recipe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
         const data = await res.json();
         if (cancelled) return;
 

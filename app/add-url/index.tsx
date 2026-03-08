@@ -16,7 +16,7 @@ import {
 import { Text, View } from '@/components/Themed';
 import { insertRecipe } from '@/lib/db';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
+const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
 
 interface ExtractedRecipe {
   title: string | null;

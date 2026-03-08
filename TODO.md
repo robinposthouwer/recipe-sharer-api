@@ -9,6 +9,7 @@
 
 ## API uitbreiden
 - [ ] oEmbed integratie voor Instagram, TikTok en YouTube (caption + thumbnail ophalen)
+- [ ] Meta App Review aanvragen voor "Meta oEmbed Read" (Advanced Access, hogere rate limits)
 - [ ] AI-parsing van social media captions naar ingrediënten en bereidingswijze
 - [ ] Lokaal opslaan van afbeeldingen (social media thumbnails verlopen)
 - [ ] AI-endpoint voor receptextractie uit tekst (`api/extract-from-text.ts`)

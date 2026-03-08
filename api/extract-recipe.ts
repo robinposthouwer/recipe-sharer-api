@@ -90,11 +90,19 @@ function getSocialMediaProvider(url: string): OEmbedProvider | null {
   return null;
 }
 
-const OEMBED_ENDPOINTS: Record<OEmbedProvider, string> = {
-  instagram: 'https://api.instagram.com/oembed/?url=',
-  tiktok: 'https://www.tiktok.com/oembed?url=',
-  youtube: 'https://www.youtube.com/oembed?url=',
-};
+function buildOEmbedUrl(url: string, provider: OEmbedProvider): string {
+  const encoded = encodeURIComponent(url);
+  if (provider === 'instagram') {
+    const appId = process.env.META_APP_ID ?? '';
+    const clientToken = process.env.META_CLIENT_TOKEN ?? '';
+    const accessToken = `${appId}|${clientToken}`;
+    return `https://graph.facebook.com/v25.0/instagram_oembed?url=${encoded}&access_token=${accessToken}`;
+  }
+  if (provider === 'tiktok') {
+    return `https://www.tiktok.com/oembed?url=${encoded}`;
+  }
+  return `https://www.youtube.com/oembed?url=${encoded}&format=json`;
+}
 
 async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
   title: string | null;
@@ -102,8 +110,10 @@ async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
   ingredients: null;
   instructions: null;
 }> {
-  const endpoint = OEMBED_ENDPOINTS[provider] + encodeURIComponent(url) +
-    (provider === 'youtube' ? '&format=json' : '');
+  if (provider === 'instagram' && (!process.env.META_APP_ID || !process.env.META_CLIENT_TOKEN)) {
+    throw new Error('Meta App ID of Client Token is niet geconfigureerd.');
+  }
+  const endpoint = buildOEmbedUrl(url, provider);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   try {

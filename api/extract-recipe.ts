@@ -89,8 +89,9 @@ function getOEmbedProvider(url: string): OEmbedProvider | null {
   return null;
 }
 
-function isInstagramUrl(url: string): boolean {
-  return url.toLowerCase().includes('instagram.com');
+function isMetaUrl(url: string): boolean {
+  const u = url.toLowerCase();
+  return u.includes('instagram.com') || u.includes('facebook.com') || u.includes('fb.watch');
 }
 
 function buildOEmbedUrl(url: string, provider: OEmbedProvider): string {
@@ -131,8 +132,8 @@ async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
   }
 }
 
-// Instagram: scrape OG meta tags (tijdelijk, tot Meta App Review is goedgekeurd)
-async function fetchInstagramMeta(url: string): Promise<{
+// Instagram & Facebook: scrape OG meta tags (tijdelijk, tot Meta App Review is goedgekeurd)
+async function fetchMetaMeta(url: string): Promise<{
   title: string | null;
   imageUrl: string | null;
   ingredients: null;
@@ -158,7 +159,7 @@ async function fetchInstagramMeta(url: string): Promise<{
     const ogDesc = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i)
       ?? html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
     const description = ogDesc ? ogDesc[1].trim() : null;
-    console.log('[Instagram scrape] OG data:', JSON.stringify({ title: og.title, image: og.image, description }, null, 2));
+    console.log('[Meta scrape] OG data:', JSON.stringify({ title: og.title, image: og.image, description }, null, 2));
     return {
       title: description || og.title,
       imageUrl: og.image,
@@ -193,15 +194,15 @@ export default async function handler(
     return;
   }
 
-  // Instagram: scrape OG meta tags (tijdelijk tot oEmbed API beschikbaar is)
-  if (isInstagramUrl(url)) {
+  // Instagram & Facebook: scrape OG meta tags (tijdelijk tot oEmbed API beschikbaar is)
+  if (isMetaUrl(url)) {
     try {
-      const result = await fetchInstagramMeta(url);
+      const result = await fetchMetaMeta(url);
       res.status(200).json(result);
       return;
     } catch (err) {
-      console.error('[Instagram scrape] Failed:', err);
-      res.status(502).json({ error: 'Kon Instagram-post niet ophalen' });
+      console.error('[Meta scrape] Failed:', err);
+      res.status(502).json({ error: 'Kon post niet ophalen' });
       return;
     }
   }
@@ -235,6 +236,8 @@ export default async function handler(
       response = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7',
         },
         signal: controller.signal,
       });

@@ -10,10 +10,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
+  View,
 } from 'react-native';
-
-import { Text, View } from '@/components/Themed';
 import { insertRecipe } from '@/lib/db';
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
@@ -185,17 +185,19 @@ export default function AddUrlScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  scroll: { flex: 1 },
+  flex: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 16, paddingBottom: 40 },
   field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: '#000' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: '#000',
+    backgroundColor: '#fff',
   },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   fetchButton: {

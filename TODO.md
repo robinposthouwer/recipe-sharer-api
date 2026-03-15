@@ -8,8 +8,14 @@
 - [ ] Themed.tsx en StyledText.tsx refactoren naar NativeWind
 
 ## API uitbreiden
-- [ ] oEmbed integratie voor Instagram, TikTok en YouTube (caption + thumbnail ophalen)
-- [ ] Meta App Review + Business Verification aanvragen voor oEmbed Read (vereist voor productie)
+- [x] oEmbed integratie voor TikTok en YouTube (caption + thumbnail ophalen)
+- [ ] Instagram/Facebook data ophalen — opties uitzoeken:
+  - Meta oEmbed Read (nieuwe versie nov 2025) retourneert GEEN caption, thumbnail of author meer
+  - Alleen `html` embed-code — caption zit mogelijk in de blockquote maar moet zelf geparsed worden
+  - Vereist: Meta App Review + Business Verification (eenmanszaak/KVK volstaat, ~€75)
+  - Meta kan in de toekomst kosten gaan rekenen voor API-calls ("billing tokens")
+  - Alternatief: headless browser (Puppeteer) voor scraping, maar complex op Vercel (50MB limiet, traag)
+  - Huidige tijdelijke oplossing: OG meta tags scrapen (werkt niet voor Instagram, wel voor andere sites)
 - [ ] Onderzoek doen naar het schalen van de app als we live gaan (API limieten, infra, kosten)
 - [ ] AI-parsing van social media captions naar ingrediënten en bereidingswijze
 - [ ] Lokaal opslaan van afbeeldingen (social media thumbnails verlopen)

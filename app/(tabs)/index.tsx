@@ -90,7 +90,7 @@ export default function ReceptenListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#fff' },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemContent: { flex: 1, marginLeft: 12 },
-  itemTitle: { fontSize: 16, fontWeight: '600' },
+  itemTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
   itemSource: { fontSize: 12, color: '#666', textTransform: 'capitalize', marginTop: 2 },
   itemUrl: { fontSize: 12, color: '#999', marginTop: 2 },
   empty: { flex: 1, justifyContent: 'center', padding: 24 },

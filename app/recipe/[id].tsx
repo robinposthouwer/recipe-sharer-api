@@ -10,9 +10,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-
-import { View } from '@/components/Themed';
 import { deleteRecipe, getRecipe, type Recipe } from '@/lib/db';
 
 export default function RecipeDetailScreen() {
@@ -103,7 +102,7 @@ export default function RecipeDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#fff' },
   image: { width: '100%', height: 200, backgroundColor: '#eee' },
   placeholder: {
     width: '100%',
@@ -113,9 +112,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: { padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 4 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 4, color: '#000' },
   source: { fontSize: 14, color: '#666', textTransform: 'capitalize', marginBottom: 12 },
-  notes: { fontSize: 16, lineHeight: 24, marginBottom: 16 },
+  notes: { fontSize: 16, lineHeight: 24, marginBottom: 16, color: '#000' },
   linkButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -123,8 +122,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   linkText: { color: '#2f95dc', fontSize: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 16, marginBottom: 6 },
-  bodyText: { fontSize: 16, lineHeight: 24, marginBottom: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 16, marginBottom: 6, color: '#000' },
+  bodyText: { fontSize: 16, lineHeight: 24, marginBottom: 8, color: '#000' },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',

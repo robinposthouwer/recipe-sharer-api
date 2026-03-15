@@ -11,9 +11,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
-
-import { View } from '@/components/Themed';
 import { insertRecipe } from '@/lib/db';
 
 export default function AddManualScreen() {
@@ -114,8 +113,8 @@ export default function AddManualScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  scroll: { flex: 1 },
+  flex: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 16, paddingBottom: 40 },
   field: { marginBottom: 20 },
   input: {
@@ -124,6 +123,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: '#000',
+    backgroundColor: '#fff',
   },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   saveButton: {

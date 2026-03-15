@@ -1,6 +1,6 @@
 import "../global.css";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,7 +8,6 @@ import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
 import { initDb } from '@/lib/db';
 
 export {
@@ -35,17 +34,20 @@ function ShareIntentHandler() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <ShareIntentHandler />
-      <Stack>
+      <Stack screenOptions={{
+        contentStyle: { backgroundColor: '#fff' },
+        headerStyle: { backgroundColor: '#fff' },
+        headerTintColor: '#2f95dc',
+        headerTitleStyle: { color: '#000' },
+      }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="save/index" options={{ title: 'Recept opslaan', headerBackTitle: 'Terug' }} />
         <Stack.Screen name="add-url/index" options={{ title: 'Voeg toe via URL', headerBackTitle: 'Terug' }} />
         <Stack.Screen name="add-manual/index" options={{ title: 'Handmatig toevoegen', headerBackTitle: 'Terug' }} />
-        <Stack.Screen name="recipe/[id]" options={{ title: 'Recept', headerBackTitle: 'Terug' }} />
+        <Stack.Screen name="recipe/[id]" options={{ title: 'Recept', headerBackTitle: 'Terug', gestureEnabled: true }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

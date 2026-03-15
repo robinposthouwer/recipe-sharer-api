@@ -11,10 +11,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
+  View,
 } from 'react-native';
-
-import { Text, View } from '@/components/Themed';
 import { insertRecipe } from '@/lib/db';
 import { extractImagePath, extractTitle, extractUrl } from '@/lib/shareIntent';
 
@@ -222,12 +222,12 @@ export default function SaveScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  scroll: { flex: 1 },
+  flex: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 16, paddingBottom: 40 },
-  container: { flex: 1, padding: 16, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, padding: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: '#000' },
   url: { fontSize: 14, color: '#666' },
   input: {
     borderWidth: 1,
@@ -235,6 +235,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+    color: '#000',
+    backgroundColor: '#fff',
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   actions: { flexDirection: 'row', gap: 12, marginTop: 24 },
@@ -248,7 +250,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: { backgroundColor: '#e0e0e0' },
   saveButton: { backgroundColor: '#2f95dc' },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  buttonText: { fontSize: 16, fontWeight: '600', color: '#000' },
   saveButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   icon: { marginRight: 8 },
   previewImage: { width: '100%', height: 200, borderRadius: 8, backgroundColor: '#eee' },

@@ -70,8 +70,9 @@ export default function SaveScreen() {
         } finally {
           clearTimeout(timeout);
         }
-        const data = await res.json();
+        const text = await res.text();
         if (cancelled) return;
+        const data = text ? JSON.parse(text) : {};
 
         if (!res.ok) {
           if (res.status === 403) {

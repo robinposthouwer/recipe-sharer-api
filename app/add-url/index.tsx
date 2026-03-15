@@ -61,7 +61,8 @@ export default function AddUrlScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: trimmed }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       await logExtraction(trimmed, data, res.ok);
       if (!res.ok) {
         Alert.alert('Fout', data.error ?? 'Kon recept niet ophalen.');

@@ -124,6 +124,15 @@ function extractOgMeta(html: string): { title: string | null; image: string | nu
 
 type OEmbedProvider = 'tiktok' | 'youtube';
 
+async function resolveShortUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    return res.url || url;
+  } catch {
+    return url;
+  }
+}
+
 function getOEmbedProvider(url: string): OEmbedProvider | null {
   const u = url.toLowerCase();
   if (u.includes('tiktok.com')) return 'tiktok';
@@ -250,10 +259,19 @@ export default async function handler(
   }
 
   // TikTok & YouTube: use oEmbed
+  let resolvedUrl = url;
   const provider = getOEmbedProvider(url);
   if (provider) {
     try {
-      const result = await fetchOEmbed(url, provider);
+      // Resolve short URLs (e.g. vm.tiktok.com → www.tiktok.com)
+      if (url.includes('vm.tiktok.com') || url.includes('youtu.be')) {
+        resolvedUrl = await resolveShortUrl(url);
+      }
+      // TikTok oEmbed doesn't support /photo/ paths, change to /video/
+      if (provider === 'tiktok') {
+        resolvedUrl = resolvedUrl.replace('/photo/', '/video/');
+      }
+      const result = await fetchOEmbed(resolvedUrl, provider);
       res.status(200).json(result);
       return;
     } catch (err) {

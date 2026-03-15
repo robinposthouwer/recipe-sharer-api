@@ -153,11 +153,68 @@ function buildOEmbedUrl(url: string, provider: OEmbedProvider): string {
   return `https://www.youtube.com/oembed?url=${encoded}&format=json`;
 }
 
+function parseTikTokCaption(caption: string): {
+  title: string | null;
+  ingredients: string | null;
+  instructions: string | null;
+  calories: string | null;
+  recipeYield: string | null;
+} {
+  // Strip hashtags from the end
+  const clean = caption.replace(/#\w+/g, '').trim();
+
+  // Try to find ingredient section
+  const ingredientMatch = clean.match(/ingredi[eë]nten\s*:?\s*([\s\S]*?)(?=---|\binstruct|\bbereiding|\bstappen\b)/i);
+  const ingredients = ingredientMatch
+    ? ingredientMatch[1]
+        .trim()
+        // Split on emoji bullets (common TikTok pattern: emoji before each ingredient)
+        .replace(/\s*[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\u{FE0F}?\s*/gu, '\n')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .join('\n')
+    : null;
+
+  // Try to find instructions section
+  const instructionMatch = clean.match(/(?:instructies|bereiding|stappen)\s*:?\s*([\s\S]*?)(?=---|\bvoedingswaarde\b|\bcalorie[eë]n\b|\btotaal\b|$)/i);
+  const instructions = instructionMatch
+    ? instructionMatch[1]
+        .trim()
+        // Split on numbered steps (1. 2. etc.)
+        .replace(/\s*(\d+)\.\s*/g, '\n$1. ')
+        .split('\n')
+        .map((l) => l.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\u{FE0F}?\s*/gu, '').trim())
+        .filter(Boolean)
+        .join('\n')
+    : null;
+
+  // Try to find calories
+  const caloriesMatch = clean.match(/(\d+[.,]?\d*)\s*kcal/i);
+  const calories = caloriesMatch ? `${caloriesMatch[1]} kcal` : null;
+
+  // Try to find yield/portions
+  const yieldMatch = clean.match(/(\d+)\s*(?:stukken|porties|personen|servings)/i);
+  const recipeYield = yieldMatch ? `${yieldMatch[1]} porties` : null;
+
+  // Title = first sentence before any section marker
+  const titleMatch = clean.match(/^([\s\S]*?)(?=ingredi[eë]nten|---)/i);
+  const title = titleMatch
+    ? titleMatch[1].replace(/[\u{1F300}-\u{1FAFF}]/gu, '').trim().replace(/\s+/g, ' ')
+    : null;
+
+  return { title: title || null, ingredients, instructions, calories, recipeYield };
+}
+
 async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
   title: string | null;
   imageUrl: string | null;
-  ingredients: null;
-  instructions: null;
+  ingredients: string | null;
+  instructions: string | null;
+  calories: string | null;
+  recipeYield: string | null;
+  author: string | null;
+  description: string | null;
 }> {
   const endpoint = buildOEmbedUrl(url, provider);
   const controller = new AbortController();
@@ -172,11 +229,31 @@ async function fetchOEmbed(url: string, provider: OEmbedProvider): Promise<{
     }
     const data = await response.json();
     console.log(`[oEmbed ${provider}] Raw response:`, JSON.stringify(data, null, 2));
+
+    // For TikTok: parse the caption for recipe data
+    if (provider === 'tiktok' && data.title) {
+      const parsed = parseTikTokCaption(data.title);
+      return {
+        title: parsed.title || data.title,
+        imageUrl: data.thumbnail_url ?? null,
+        ingredients: parsed.ingredients,
+        instructions: parsed.instructions,
+        calories: parsed.calories,
+        recipeYield: parsed.recipeYield,
+        author: data.author_name ?? null,
+        description: null,
+      };
+    }
+
     return {
       title: data.title ?? null,
       imageUrl: data.thumbnail_url ?? null,
       ingredients: null,
       instructions: null,
+      calories: null,
+      recipeYield: null,
+      author: data.author_name ?? null,
+      description: null,
     };
   } finally {
     clearTimeout(timeout);

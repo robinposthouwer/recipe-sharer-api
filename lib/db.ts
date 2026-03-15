@@ -1,4 +1,6 @@
 import * as SQLite from 'expo-sqlite';
+import { runMigrations } from './migrations';
+import { scheduleSyncAfterWrite } from './sync';
 
 export interface Recipe {
   id: number;
@@ -9,7 +11,19 @@ export interface Recipe {
   imagePath: string | null;
   ingredients: string | null;
   instructions: string | null;
+  description: string | null;
+  recipeYield: string | null;
+  cookTime: string | null;
+  totalTime: string | null;
+  recipeCategory: string | null;
+  calories: string | null;
+  author: string | null;
+  rating: string | null;
+  videoUrl: string | null;
   createdAt: string;
+  remote_id?: string | null;
+  updated_at?: string | null;
+  sync_status?: string | null;
 }
 
 let db: SQLite.SQLiteDatabase | null = null;
@@ -30,6 +44,8 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
       createdAt TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  // Legacy migrations (pre-migration system)
   const info = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(recipes)`);
   const columns = info.map((r) => r.name);
   if (!columns.includes('ingredients')) {
@@ -38,6 +54,18 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
   if (!columns.includes('instructions')) {
     await db.execAsync(`ALTER TABLE recipes ADD COLUMN instructions TEXT`);
   }
+
+  // Sync metadata table
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS sync_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `);
+
+  // Run numbered migrations (adds sync columns etc.)
+  await runMigrations(db);
+
   return db;
 }
 
@@ -57,11 +85,21 @@ export async function insertRecipe(data: {
   imagePath?: string | null;
   ingredients?: string | null;
   instructions?: string | null;
+  description?: string | null;
+  recipeYield?: string | null;
+  cookTime?: string | null;
+  totalTime?: string | null;
+  recipeCategory?: string | null;
+  calories?: string | null;
+  author?: string | null;
+  rating?: string | null;
+  videoUrl?: string | null;
 }): Promise<number> {
   const database = await initDb();
   const source = inferSource(data.url ?? null);
+  const now = new Date().toISOString();
   const result = await database.runAsync(
-    `INSERT INTO recipes (title, url, source, notes, imagePath, ingredients, instructions) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO recipes (title, url, source, notes, imagePath, ingredients, instructions, description, recipeYield, cookTime, totalTime, recipeCategory, calories, author, rating, videoUrl, updated_at, sync_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
     [
       data.title ?? null,
       data.url ?? null,
@@ -70,15 +108,26 @@ export async function insertRecipe(data: {
       data.imagePath ?? null,
       data.ingredients ?? null,
       data.instructions ?? null,
+      data.description ?? null,
+      data.recipeYield ?? null,
+      data.cookTime ?? null,
+      data.totalTime ?? null,
+      data.recipeCategory ?? null,
+      data.calories ?? null,
+      data.author ?? null,
+      data.rating ?? null,
+      data.videoUrl ?? null,
+      now,
     ]
   );
+  scheduleSyncAfterWrite();
   return result.lastInsertRowId;
 }
 
 export async function getRecipes(): Promise<Recipe[]> {
   const database = await initDb();
   const rows = await database.getAllAsync<Recipe>(
-    `SELECT id, title, url, source, notes, imagePath, ingredients, instructions, createdAt FROM recipes ORDER BY createdAt DESC`
+    `SELECT id, title, url, source, notes, imagePath, ingredients, instructions, description, recipeYield, cookTime, totalTime, recipeCategory, calories, author, rating, videoUrl, createdAt FROM recipes WHERE deleted_at IS NULL ORDER BY createdAt DESC`
   );
   return rows;
 }
@@ -86,7 +135,7 @@ export async function getRecipes(): Promise<Recipe[]> {
 export async function getRecipe(id: number): Promise<Recipe | null> {
   const database = await initDb();
   const rows = await database.getAllAsync<Recipe>(
-    `SELECT id, title, url, source, notes, imagePath, ingredients, instructions, createdAt FROM recipes WHERE id = ?`,
+    `SELECT id, title, url, source, notes, imagePath, ingredients, instructions, description, recipeYield, cookTime, totalTime, recipeCategory, calories, author, rating, videoUrl, createdAt FROM recipes WHERE id = ? AND deleted_at IS NULL`,
     [id]
   );
   return rows[0] ?? null;
@@ -99,11 +148,21 @@ export async function updateRecipe(id: number, data: {
   imagePath?: string | null;
   ingredients?: string | null;
   instructions?: string | null;
+  description?: string | null;
+  recipeYield?: string | null;
+  cookTime?: string | null;
+  totalTime?: string | null;
+  recipeCategory?: string | null;
+  calories?: string | null;
+  author?: string | null;
+  rating?: string | null;
+  videoUrl?: string | null;
 }): Promise<void> {
   const database = await initDb();
   const source = inferSource(data.url ?? null);
+  const now = new Date().toISOString();
   await database.runAsync(
-    `UPDATE recipes SET title = ?, url = ?, source = ?, notes = ?, imagePath = ?, ingredients = ?, instructions = ? WHERE id = ?`,
+    `UPDATE recipes SET title = ?, url = ?, source = ?, notes = ?, imagePath = ?, ingredients = ?, instructions = ?, description = ?, recipeYield = ?, cookTime = ?, totalTime = ?, recipeCategory = ?, calories = ?, author = ?, rating = ?, videoUrl = ?, updated_at = ?, sync_status = 'pending' WHERE id = ?`,
     [
       data.title ?? null,
       data.url ?? null,
@@ -112,12 +171,29 @@ export async function updateRecipe(id: number, data: {
       data.imagePath ?? null,
       data.ingredients ?? null,
       data.instructions ?? null,
+      data.description ?? null,
+      data.recipeYield ?? null,
+      data.cookTime ?? null,
+      data.totalTime ?? null,
+      data.recipeCategory ?? null,
+      data.calories ?? null,
+      data.author ?? null,
+      data.rating ?? null,
+      data.videoUrl ?? null,
+      now,
       id,
     ]
   );
+  scheduleSyncAfterWrite();
 }
 
 export async function deleteRecipe(id: number): Promise<void> {
   const database = await initDb();
-  await database.runAsync(`DELETE FROM recipes WHERE id = ?`, [id]);
+  const now = new Date().toISOString();
+  // Soft delete: mark as deleted so it can sync to cloud
+  await database.runAsync(
+    `UPDATE recipes SET deleted_at = ?, updated_at = ?, sync_status = 'pending' WHERE id = ?`,
+    [now, now, id]
+  );
+  scheduleSyncAfterWrite();
 }

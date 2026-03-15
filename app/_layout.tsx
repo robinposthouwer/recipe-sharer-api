@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto';
 import "../global.css";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -6,9 +7,11 @@ import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 import { useEffect } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { initDb } from '@/lib/db';
+import { AuthProvider } from '@/components/AuthProvider';
 
 export {
   ErrorBoundary,
@@ -33,21 +36,45 @@ function ShareIntentHandler() {
   return null;
 }
 
+function BackButton() {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.back()}
+      hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+      style={{ paddingVertical: 8, paddingRight: 16, backgroundColor: 'transparent' }}
+    >
+      <Text style={{ color: '#2f95dc', fontSize: 17 }}>‹ Terug</Text>
+    </Pressable>
+  );
+}
+
+
 function RootLayoutNav() {
   return (
-    <ThemeProvider value={DefaultTheme}>
+    <ThemeProvider value={{
+      ...DefaultTheme,
+      colors: { ...DefaultTheme.colors, background: '#fff', card: '#fff' },
+    }}>
       <ShareIntentHandler />
       <Stack screenOptions={{
         contentStyle: { backgroundColor: '#fff' },
         headerStyle: { backgroundColor: '#fff' },
+        headerShadowVisible: false,
         headerTintColor: '#2f95dc',
         headerTitleStyle: { color: '#000' },
+        headerBlurEffect: undefined,
+        headerTransparent: false,
+        animation: 'fade',
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="save/index" options={{ title: 'Recept opslaan', headerBackTitle: 'Terug' }} />
-        <Stack.Screen name="add-url/index" options={{ title: 'Voeg toe via URL', headerBackTitle: 'Terug' }} />
-        <Stack.Screen name="add-manual/index" options={{ title: 'Handmatig toevoegen', headerBackTitle: 'Terug' }} />
-        <Stack.Screen name="recipe/[id]" options={{ title: 'Recept', headerBackTitle: 'Terug', gestureEnabled: true }} />
+        <Stack.Screen name="save/index" options={{ title: 'Recept opslaan', headerLeft: () => <BackButton /> }} />
+        <Stack.Screen name="add-url/index" options={{ title: 'Voeg toe via URL', headerLeft: () => <BackButton /> }} />
+        <Stack.Screen name="add-manual/index" options={{ title: 'Handmatig toevoegen', headerLeft: () => <BackButton /> }} />
+        <Stack.Screen name="recipe/[id]" options={{
+          headerShown: false,
+          gestureEnabled: true,
+        }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
@@ -76,8 +103,12 @@ export default function RootLayout() {
   }
 
   return (
-    <ShareIntentProvider>
-      <RootLayoutNav />
-    </ShareIntentProvider>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <AuthProvider>
+        <ShareIntentProvider>
+          <RootLayoutNav />
+        </ShareIntentProvider>
+      </AuthProvider>
+    </View>
   );
 }

@@ -1,19 +1,16 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { insertRecipe } from '@/lib/db';
+import Button from '@/components/Button';
 
 export default function AddManualScreen() {
   const router = useRouter();
@@ -93,20 +90,14 @@ export default function AddManualScreen() {
             multiline
           />
         </View>
-        <Pressable
+        <Button
+          title="Opslaan"
+          icon="bookmark"
           onPress={handleSave}
-          style={[styles.saveButton, saving && styles.disabled]}
+          loading={saving}
           disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <FontAwesome name="bookmark" size={16} color="#fff" style={styles.icon} />
-              <Text style={styles.saveButtonText}>Opslaan</Text>
-            </>
-          )}
-        </Pressable>
+          fullWidth
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -127,16 +118,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
-  saveButton: {
-    backgroundColor: '#2f95dc',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  disabled: { opacity: 0.7 },
-  saveButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  icon: { marginRight: 8 },
 });

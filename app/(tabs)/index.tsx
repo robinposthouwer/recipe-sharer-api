@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { getRecipes, type Recipe } from '@/lib/db';
+import Button from '@/components/Button';
 
 function RecipeItem({ recipe, onPress }: { recipe: Recipe; onPress: () => void }) {
   return (
@@ -56,22 +57,21 @@ export default function ReceptenListScreen() {
 
   return (
     <View style={styles.container}>
-      <Pressable
-        style={styles.addButton}
-        onPress={() => router.push('/add-url')}
-        android_ripple={{ color: '#fff' }}
-      >
-        <FontAwesome name="link" size={20} color="#fff" />
-        <Text style={styles.addButtonText}>Via URL toevoegen</Text>
-      </Pressable>
-      <Pressable
-        style={[styles.addButton, styles.addButtonSecondary]}
-        onPress={() => router.push('/add-manual')}
-        android_ripple={{ color: '#fff' }}
-      >
-        <FontAwesome name="edit" size={20} color="#fff" />
-        <Text style={styles.addButtonText}>Handmatig toevoegen?</Text>
-      </Pressable>
+      <View style={styles.buttons}>
+        <Button
+          title="Via URL toevoegen"
+          icon="link"
+          onPress={() => router.push('/add-url')}
+          fullWidth
+        />
+        <Button
+          title="Handmatig toevoegen"
+          icon="edit"
+          variant="secondary"
+          onPress={() => router.push('/add-manual')}
+          fullWidth
+        />
+      </View>
       <FlatList
         data={recipes}
         keyExtractor={(r) => String(r.id)}
@@ -91,20 +91,12 @@ export default function ReceptenListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  buttons: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
     gap: 8,
-    backgroundColor: '#2f95dc',
-    padding: 14,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
-    borderRadius: 8,
   },
-  addButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  addButtonSecondary: { backgroundColor: '#1a7f37' },
   item: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,9 +1,19 @@
 interface SchemaRecipe {
   '@type'?: string;
   name?: string;
+  description?: string;
   image?: string | string[] | { url?: string }[];
   recipeIngredient?: string[];
   recipeInstructions?: Array<{ '@type'?: string; text?: string; name?: string } | string>;
+  recipeYield?: string | number;
+  cookTime?: string;
+  prepTime?: string;
+  totalTime?: string;
+  recipeCategory?: string | string[];
+  nutrition?: { '@type'?: string; calories?: string; [key: string]: unknown };
+  author?: { '@type'?: string; name?: string } | string | Array<{ name?: string } | string>;
+  aggregateRating?: { '@type'?: string; ratingValue?: number | string; ratingCount?: number | string };
+  video?: { '@type'?: string; name?: string; contentUrl?: string; thumbnailUrl?: string | string[] };
 }
 
 function extractImage(obj: SchemaRecipe): string | null {
@@ -16,6 +26,38 @@ function extractImage(obj: SchemaRecipe): string | null {
     if (first && typeof first === 'object' && 'url' in first) return (first as { url?: string }).url ?? null;
   }
   return null;
+}
+
+function formatDuration(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const match = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i);
+  if (!match) return null;
+  const parts: string[] = [];
+  if (match[1]) parts.push(`${match[1]} uur`);
+  if (match[2]) parts.push(`${match[2]} min`);
+  if (match[3]) parts.push(`${match[3]} sec`);
+  return parts.join(' ') || null;
+}
+
+function extractAuthor(obj: SchemaRecipe): string | null {
+  const a = obj.author;
+  if (!a) return null;
+  if (typeof a === 'string') return a;
+  if (Array.isArray(a)) {
+    return a.map((x) => (typeof x === 'string' ? x : x.name ?? '')).filter(Boolean).join(', ') || null;
+  }
+  return a.name ?? null;
+}
+
+function extractRating(obj: SchemaRecipe): string | null {
+  const r = obj.aggregateRating;
+  if (!r || !r.ratingValue) return null;
+  const count = r.ratingCount ? ` (${r.ratingCount})` : '';
+  return `${r.ratingValue}/5${count}`;
+}
+
+function extractVideoUrl(obj: SchemaRecipe): string | null {
+  return obj.video?.contentUrl ?? null;
 }
 
 function extractInstructions(obj: SchemaRecipe): string {
@@ -253,11 +295,23 @@ export default async function handler(
     if (recipe) {
       const ingredients = recipe.recipeIngredient?.join('\n') ?? '';
       const instructions = extractInstructions(recipe);
+      const category = Array.isArray(recipe.recipeCategory)
+        ? recipe.recipeCategory.join(', ')
+        : recipe.recipeCategory ?? null;
       res.status(200).json({
         title: recipe.name ?? null,
         imageUrl: extractImage(recipe),
         ingredients: ingredients || null,
         instructions: instructions || null,
+        description: recipe.description ?? null,
+        recipeYield: recipe.recipeYield ? String(recipe.recipeYield) : null,
+        cookTime: formatDuration(recipe.cookTime),
+        totalTime: formatDuration(recipe.totalTime),
+        recipeCategory: category || null,
+        calories: recipe.nutrition?.calories ?? null,
+        author: extractAuthor(recipe),
+        rating: extractRating(recipe),
+        videoUrl: extractVideoUrl(recipe),
       });
       return;
     }

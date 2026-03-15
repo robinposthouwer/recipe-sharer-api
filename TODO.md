@@ -16,15 +16,27 @@
   - Meta kan in de toekomst kosten gaan rekenen voor API-calls ("billing tokens")
   - Alternatief: headless browser (Puppeteer) voor scraping, maar complex op Vercel (50MB limiet, traag)
   - Huidige tijdelijke oplossing: OG meta tags scrapen (werkt niet voor Instagram, wel voor andere sites)
+- [ ] YouTube Data API v3 integreren voor video-beschrijvingen (receptinfo uit caption)
+  - Gratis: 10.000 quota-eenheden/dag — let op bij groei (20k gebruikers × 2 video's = over limiet)
+  - Caching inbouwen: video-beschrijving opslaan na eerste keer ophalen, zodat dezelfde video niet dubbel wordt opgehaald
+  - Quotum verhoging aanvragen bij Google als we richting 10.000 calls/dag gaan
+  - Dagelijkse API-call teller bijhouden (bijv. in Supabase); bij 10.000+ een melding tonen aan de gebruiker ("Limiet bereikt, probeer het morgen opnieuw")
 - [ ] Onderzoek doen naar het schalen van de app als we live gaan (API limieten, infra, kosten)
-- [ ] AI-parsing van social media captions naar ingrediënten en bereidingswijze
+- [ ] AI-parsing van social media captions naar gestructureerde receptdata:
+  - Titel extraheren uit caption/video
+  - Ingrediënten herkennen en opsplitsen
+  - Bereidingswijze stap-voor-stap afleiden
+  - Uitzoeken: eigen LLM trainen/fine-tunen vs. bestaande API gebruiken (Claude, GPT, etc.)
+  - Kosten per API-call berekenen en testen (belangrijk voor schaalbaarheid)
+- [ ] Mislukte extracties bijhouden in database (Supabase): als ingrediënten/beschrijving niet opgehaald konden worden, URL + bron opslaan zodat we later alsnog kunnen verwerken (bijv. via AI of handmatig)
 - [ ] Lokaal opslaan van afbeeldingen (social media thumbnails verlopen)
 - [ ] AI-endpoint voor receptextractie uit tekst (`api/extract-from-text.ts`)
 - [ ] Afbeeldingen genereren voor recepten zonder foto (`api/generate-image.ts`)
 
-## Gebruikersaccounts (toekomstig)
-- [ ] Login / registratie systeem
-- [ ] Cloud-sync van recepten (bijv. Supabase of Firebase)
+## Gebruikersaccounts
+- [x] Login / registratie systeem (e-mail/wachtwoord via Supabase Auth)
+- [x] Cloud-sync van recepten (Supabase, offline-first met SQLite)
+- [ ] Apple Sign In toevoegen (vereist betaald Apple Developer account, $99/jaar)
 - [ ] Recepten delen met andere gebruikers
 
 ## Sociaal delen (toekomstig)

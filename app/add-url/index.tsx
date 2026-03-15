@@ -1,13 +1,10 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +12,8 @@ import {
   View,
 } from 'react-native';
 import { insertRecipe } from '@/lib/db';
+import Button from '@/components/Button';
+import { logExtraction } from '@/lib/extractionLog';
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
 
@@ -23,6 +22,15 @@ interface ExtractedRecipe {
   imageUrl: string | null;
   ingredients: string | null;
   instructions: string | null;
+  description: string | null;
+  recipeYield: string | null;
+  cookTime: string | null;
+  totalTime: string | null;
+  recipeCategory: string | null;
+  calories: string | null;
+  author: string | null;
+  rating: string | null;
+  videoUrl: string | null;
 }
 
 export default function AddUrlScreen() {
@@ -54,6 +62,7 @@ export default function AddUrlScreen() {
         body: JSON.stringify({ url: trimmed }),
       });
       const data = await res.json();
+      await logExtraction(trimmed, data, res.ok);
       if (!res.ok) {
         Alert.alert('Fout', data.error ?? 'Kon recept niet ophalen.');
         return;
@@ -62,7 +71,8 @@ export default function AddUrlScreen() {
       setTitle(data.title ?? '');
       setIngredients(data.ingredients ?? '');
       setInstructions(data.instructions ?? '');
-    } catch {
+    } catch (e) {
+      await logExtraction(trimmed, { error: String(e) }, false);
       Alert.alert('Fout', 'Netwerkfout. Controleer de verbinding.');
     } finally {
       setLoading(false);
@@ -84,6 +94,15 @@ export default function AddUrlScreen() {
         imagePath: extracted?.imageUrl ?? null,
         ingredients: ingredients || null,
         instructions: instructions || null,
+        description: extracted?.description ?? null,
+        recipeYield: extracted?.recipeYield ?? null,
+        cookTime: extracted?.cookTime ?? null,
+        totalTime: extracted?.totalTime ?? null,
+        recipeCategory: extracted?.recipeCategory ?? null,
+        calories: extracted?.calories ?? null,
+        author: extracted?.author ?? null,
+        rating: extracted?.rating ?? null,
+        videoUrl: extracted?.videoUrl ?? null,
       });
       router.replace('/(tabs)');
     } catch {
@@ -112,20 +131,16 @@ export default function AddUrlScreen() {
             keyboardType="url"
             editable={!loading}
           />
-          <Pressable
-            onPress={handleFetch}
-            style={[styles.fetchButton, loading && styles.fetchButtonDisabled]}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <FontAwesome name="link" size={16} color="#fff" style={styles.icon} />
-                <Text style={styles.fetchButtonText}>Haal recept op</Text>
-              </>
-            )}
-          </Pressable>
+          <View style={styles.buttonMargin}>
+            <Button
+              title="Haal recept op"
+              icon="link"
+              onPress={handleFetch}
+              loading={loading}
+              disabled={loading}
+              fullWidth
+            />
+          </View>
         </View>
 
         {extracted && (
@@ -167,16 +182,14 @@ export default function AddUrlScreen() {
                 multiline
               />
             </View>
-            <Pressable onPress={handleSave} style={[styles.saveButton, saving && styles.fetchButtonDisabled]} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <FontAwesome name="bookmark" size={16} color="#fff" style={styles.icon} />
-                  <Text style={styles.fetchButtonText}>Opslaan</Text>
-                </>
-              )}
-            </Pressable>
+            <Button
+              title="Opslaan"
+              icon="bookmark"
+              onPress={handleSave}
+              loading={saving}
+              disabled={saving}
+              fullWidth
+            />
           </>
         )}
       </ScrollView>
@@ -200,26 +213,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
-  fetchButton: {
-    backgroundColor: '#2f95dc',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  fetchButtonDisabled: { opacity: 0.7 },
-  fetchButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  icon: { marginRight: 8 },
+  buttonMargin: { marginTop: 8 },
   previewImage: { width: '100%', height: 200, borderRadius: 8, backgroundColor: '#eee' },
-  saveButton: {
-    backgroundColor: '#2f95dc',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    marginTop: 8,
-  },
 });

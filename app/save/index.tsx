@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect, useState } from 'react';
@@ -8,7 +7,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +15,8 @@ import {
 } from 'react-native';
 import { insertRecipe } from '@/lib/db';
 import { extractImagePath, extractTitle, extractUrl } from '@/lib/shareIntent';
+import Button from '@/components/Button';
+import { logExtraction } from '@/lib/extractionLog';
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
 
@@ -30,6 +30,17 @@ export default function SaveScreen() {
   const [fetchedImageUrl, setFetchedImageUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [extractedData, setExtractedData] = useState<{
+    description?: string | null;
+    recipeYield?: string | null;
+    cookTime?: string | null;
+    totalTime?: string | null;
+    recipeCategory?: string | null;
+    calories?: string | null;
+    author?: string | null;
+    rating?: string | null;
+    videoUrl?: string | null;
+  }>({});
 
   const url = shareIntent ? extractUrl(shareIntent) : null;
   const defaultTitle = shareIntent ? extractTitle(shareIntent) : null;
@@ -70,15 +81,28 @@ export default function SaveScreen() {
         }
 
         console.log('[SaveScreen] Extracted data:', JSON.stringify(data, null, 2));
+        await logExtraction(url, data, res.ok);
 
         // Only fill fields that are empty (share intent data has priority)
         if (!defaultTitle && data.title) setTitle(data.title);
         if (!shareImagePath && data.imageUrl) setFetchedImageUrl(data.imageUrl);
         if (data.ingredients) setIngredients(data.ingredients);
         if (data.instructions) setInstructions(data.instructions);
-      } catch {
+        setExtractedData({
+          description: data.description,
+          recipeYield: data.recipeYield,
+          cookTime: data.cookTime,
+          totalTime: data.totalTime,
+          recipeCategory: data.recipeCategory,
+          calories: data.calories,
+          author: data.author,
+          rating: data.rating,
+          videoUrl: data.videoUrl,
+        });
+      } catch (e) {
         // Silently continue — user can still save manually
         console.log('[SaveScreen] API fetch failed, continuing without extraction');
+        await logExtraction(url, { error: String(e) }, false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -101,6 +125,15 @@ export default function SaveScreen() {
         imagePath: displayImage || null,
         ingredients: ingredients || null,
         instructions: instructions || null,
+        description: extractedData.description || null,
+        recipeYield: extractedData.recipeYield || null,
+        cookTime: extractedData.cookTime || null,
+        totalTime: extractedData.totalTime || null,
+        recipeCategory: extractedData.recipeCategory || null,
+        calories: extractedData.calories || null,
+        author: extractedData.author || null,
+        rating: extractedData.rating || null,
+        videoUrl: extractedData.videoUrl || null,
       });
       resetShareIntent();
       router.replace('/(tabs)');
@@ -120,9 +153,9 @@ export default function SaveScreen() {
     return (
       <View style={styles.container}>
         <Text>Geen gedeelde content.</Text>
-        <Pressable onPress={() => router.replace('/(tabs)')} style={styles.button}>
-          <Text style={styles.buttonText}>Terug</Text>
-        </Pressable>
+        <View style={styles.buttonMargin}>
+          <Button title="Terug" variant="outline" onPress={() => router.replace('/(tabs)')} />
+        </View>
       </View>
     );
   }
@@ -202,19 +235,19 @@ export default function SaveScreen() {
           />
         </View>
         <View style={styles.actions}>
-          <Pressable onPress={handleCancel} style={[styles.button, styles.cancelButton]}>
-            <Text style={styles.buttonText}>Annuleren</Text>
-          </Pressable>
-          <Pressable onPress={handleSave} style={[styles.button, styles.saveButton]} disabled={saving || loading}>
-            {saving ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <FontAwesome name="bookmark" size={16} color="#fff" style={styles.icon} />
-                <Text style={styles.saveButtonText}>Opslaan</Text>
-              </>
-            )}
-          </Pressable>
+          <View style={styles.actionButton}>
+            <Button title="Annuleren" variant="outline" onPress={handleCancel} fullWidth />
+          </View>
+          <View style={styles.actionButton}>
+            <Button
+              title="Opslaan"
+              icon="bookmark"
+              onPress={handleSave}
+              loading={saving}
+              disabled={saving || loading}
+              fullWidth
+            />
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -240,19 +273,8 @@ const styles = StyleSheet.create({
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   actions: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  button: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  cancelButton: { backgroundColor: '#e0e0e0' },
-  saveButton: { backgroundColor: '#2f95dc' },
-  buttonText: { fontSize: 16, fontWeight: '600', color: '#000' },
-  saveButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  icon: { marginRight: 8 },
+  actionButton: { flex: 1 },
+  buttonMargin: { marginTop: 16 },
   previewImage: { width: '100%', height: 200, borderRadius: 8, backgroundColor: '#eee' },
   loadingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 8 },
   loadingText: { fontSize: 14, color: '#2f95dc' },

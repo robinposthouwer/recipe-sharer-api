@@ -22,12 +22,25 @@
   - Quotum verhoging aanvragen bij Google als we richting 10.000 calls/dag gaan
   - Dagelijkse API-call teller bijhouden (bijv. in Supabase); bij 10.000+ een melding tonen aan de gebruiker ("Limiet bereikt, probeer het morgen opnieuw")
 - [ ] Onderzoek doen naar het schalen van de app als we live gaan (API limieten, infra, kosten)
+- [x] Basis caption-parsing voor TikTok (regex-gebaseerd: ingrediënten, instructies, calorieën, porties)
 - [ ] AI-parsing van social media captions naar gestructureerde receptdata:
+  - Huidige regex-parser werkt alleen als caption netjes gestructureerd is — AI kan ook ongestructureerde tekst splitsen
   - Titel extraheren uit caption/video
-  - Ingrediënten herkennen en opsplitsen
+  - Ingrediënten herkennen en opsplitsen (ook als ze niet gelabeld zijn)
   - Bereidingswijze stap-voor-stap afleiden
-  - Uitzoeken: eigen LLM trainen/fine-tunen vs. bestaande API gebruiken (Claude, GPT, etc.)
-  - Kosten per API-call berekenen en testen (belangrijk voor schaalbaarheid)
+  - Voedingswaarden, porties, bereidingstijd, categorie herkennen
+  - **Aanpak onderzoeken: hybride decision tree met AI als fallback**
+    - Stap 1: regex/rule-based parsing (gratis, huidige aanpak)
+    - Stap 2: als regex faalt → AI-call voor parsing (alleen als nodig = kostenefficiënt)
+    - n8n workflow overwegen: decision tree die bepaalt of AI nodig is, en zo ja welk model
+    - Goedkoop model eerst (bijv. Claude Haiku, GPT-4o-mini) voor simpele splits
+    - Duur model (Claude Sonnet/Opus) alleen voor complexe captions waar goedkoop model faalt
+  - Kosten per API-call berekenen en testen:
+    - Claude Haiku: ~$0.001 per caption
+    - GPT-4o-mini: ~$0.0005 per caption
+    - Bij 10.000 gebruikers × 2 recepten/dag = ~$10-20/dag met Haiku
+  - n8n self-hosted overwegen voor workflow-orchestratie (gratis, draait op eigen server)
+  - Alternatief: eigen fine-tuned model trainen op recept-captions (hogere upfront kosten, lagere running costs)
 - [ ] Mislukte extracties bijhouden in database (Supabase): als ingrediënten/beschrijving niet opgehaald konden worden, URL + bron opslaan zodat we later alsnog kunnen verwerken (bijv. via AI of handmatig)
 - [ ] Lokaal opslaan van afbeeldingen (social media thumbnails verlopen)
 - [ ] AI-endpoint voor receptextractie uit tekst (`api/extract-from-text.ts`)

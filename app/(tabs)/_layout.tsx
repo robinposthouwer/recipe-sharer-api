@@ -20,7 +20,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Recepten (v0.4)',
+          title: 'Recepten (v0.4.2)',
           tabBarIcon: ({ color }) => <TabBarIcon name="book" color={color} />,
         }}
       />

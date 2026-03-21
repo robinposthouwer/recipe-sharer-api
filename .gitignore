@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Superpowers brainstorm / Pencil design files
+.superpowers/
+*.pen

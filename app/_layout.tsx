@@ -6,12 +6,13 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { initDb } from '@/lib/db';
 import { AuthProvider } from '@/components/AuthProvider';
+import { SplashAnimation } from '@/components/SplashAnimation';
 
 export {
   ErrorBoundary,
@@ -84,8 +85,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    LondrinaSolid_900Black: require('@expo-google-fonts/londrina-solid/900Black/LondrinaSolid_900Black.ttf'),
+    Nunito_600SemiBold: require('@expo-google-fonts/nunito/600SemiBold/Nunito_600SemiBold.ttf'),
     ...FontAwesome.font,
   });
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (error) throw error;
@@ -100,6 +104,10 @@ export default function RootLayout() {
 
   if (!loaded) {
     return null;
+  }
+
+  if (showSplash) {
+    return <SplashAnimation onFinished={() => setShowSplash(false)} />;
   }
 
   return (

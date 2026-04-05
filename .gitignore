@@ -43,3 +43,4 @@ yarn-error.*
 # Superpowers brainstorm / Pencil design files
 .superpowers/
 *.pen
+.worktrees/

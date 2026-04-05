@@ -89,7 +89,11 @@ export function SplashAnimation({ onFinished }: SplashAnimationProps) {
           style={styles.blob}
           resizeMode="contain"
         />
-        <Animated.View style={[styles.shadow, shadowStyle]} />
+        <Animated.Image
+          source={require('../assets/images/ghost-shadow.png')}
+          style={[styles.shadow, shadowStyle]}
+          resizeMode="contain"
+        />
         <Animated.Image
           source={require('../assets/images/ghost.png')}
           style={[styles.ghost, ghostStyle]}
@@ -143,10 +147,8 @@ const styles = StyleSheet.create({
   shadow: {
     position: 'absolute',
     bottom: 30,
-    width: 110,
-    height: 18,
-    borderRadius: 50,
-    backgroundColor: '#00000040',
+    width: 120,
+    height: 20,
   },
   logo: {
     fontFamily: 'LondrinaSolid_900Black',
